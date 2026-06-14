@@ -183,9 +183,9 @@ label {
 .table th,
 .table td {
   text-align: left;
-  padding: 12px 10px;
+  padding: 6px 10px;
   border-bottom: 1px solid var(--border);
-  vertical-align: top;
+  vertical-align: middle;
 }
 
 .table th {
@@ -238,6 +238,16 @@ label {
 .actions button {
   padding: 5px 10px;
   font-size: 0.85rem;
+}
+
+/* Nelle righe della tabella: Modifica ed Elimina sempre affiancati e compatti */
+.cell-actions .actions {
+  flex-wrap: nowrap;
+}
+
+.cell-actions .actions button {
+  padding: 4px 9px;
+  font-size: 0.8rem;
 }
 
 /* Modale */
