@@ -83,6 +83,22 @@ export default function Dashboard() {
     [pagamenti]
   );
 
+  // Ordine: attive (scadenza più vicina prima), poi senza scadenza, scadute in fondo.
+  const clientiSorted = useMemo(() => {
+    const rank = (c: Cliente) => {
+      if (!c.scadenza) return 1;
+      return expiryStatus(c.scadenza).kind === "expired" ? 2 : 0;
+    };
+    return [...clienti].sort((a, b) => {
+      const diff = rank(a) - rank(b);
+      if (diff !== 0) return diff;
+      const da = a.scadenza ?? "";
+      const db = b.scadenza ?? "";
+      if (da !== db) return da < db ? -1 : 1;
+      return a.nome.localeCompare(b.nome);
+    });
+  }, [clienti]);
+
   // --- Clienti ---
   async function editCliente(id: number) {
     const res = await fetch(`/api/clienti/${id}`);
@@ -220,7 +236,7 @@ export default function Dashboard() {
                 </tr>
               </thead>
               <tbody>
-                {clienti.map((c) => {
+                {clientiSorted.map((c) => {
                   const status = expiryStatus(c.scadenza);
                   return (
                     <tr key={c.id} className={Number(c.credito_mesi) > 0 ? "has-credit" : undefined}>
