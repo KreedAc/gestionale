@@ -32,10 +32,13 @@ function expiryStatus(scadenza: string | null): { kind: string; label: string } 
   const due = new Date(scadenza);
   due.setHours(0, 0, 0, 0);
   const days = Math.round((due.getTime() - today.getTime()) / 86_400_000);
-  const dateLabel = due.toLocaleDateString("it-IT");
-  if (days < 0) return { kind: "expired", label: `Scaduto (${dateLabel})` };
-  if (days === 0) return { kind: "warn", label: "Scade oggi" };
-  if (days <= WARN_DAYS) return { kind: "warn", label: `Tra ${days} gg (${dateLabel})` };
+  const dd = String(due.getDate()).padStart(2, "0");
+  const mm = String(due.getMonth() + 1).padStart(2, "0");
+  const dateLabel = `${dd}/${mm}/${due.getFullYear()}`;
+  // Etichetta compatta: solo la data, il colore indica lo stato.
+  if (days < 0) return { kind: "expired", label: dateLabel };
+  if (days === 0) return { kind: "warn", label: "Oggi" };
+  if (days <= WARN_DAYS) return { kind: "warn", label: dateLabel };
   return { kind: "ok", label: dateLabel };
 }
 
