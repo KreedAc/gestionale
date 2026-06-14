@@ -1,0 +1,6 @@
+[build]
+  command = "npm run build"
+
+# Il plugin ufficiale Next.js: gestisce build, API, middleware e funzioni server.
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
