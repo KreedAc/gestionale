@@ -45,6 +45,13 @@ export function ensureSchema(): Promise<void> {
           updated_at TEXT NOT NULL DEFAULT (datetime('now'))
         )`
       );
+      await db.execute(
+        `CREATE TABLE IF NOT EXISTS login_attempts (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          ip TEXT NOT NULL,
+          created_at TEXT NOT NULL DEFAULT (datetime('now'))
+        )`
+      );
     })();
   }
   return schemaReady;
