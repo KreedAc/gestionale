@@ -14,6 +14,21 @@ export function getDb(): Client {
   return client;
 }
 
+// Esegue una istruzione DDL tollerando un falso errore del client Turso.
+// Su Turso le istruzioni di schema passano per i "migration jobs": alcune
+// versioni del client segnalano "Unexpected status code while fetching
+// migration jobs: 400" ANCHE quando la tabella viene creata correttamente.
+// Ignoriamo solo quel caso specifico; ogni altro errore viene rilanciato.
+async function runDDL(db: Client, sql: string): Promise<void> {
+  try {
+    await db.execute(sql);
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : "";
+    if (msg.includes("migration jobs")) return;
+    throw e;
+  }
+}
+
 let schemaReady: Promise<void> | null = null;
 
 // Crea le tabelle se non esistono. Eseguito una sola volta per processo.
@@ -21,7 +36,8 @@ export function ensureSchema(): Promise<void> {
   if (!schemaReady) {
     schemaReady = (async () => {
       const db = getDb();
-      await db.execute(
+      await runDDL(
+        db,
         `CREATE TABLE IF NOT EXISTS clienti (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
           nome TEXT NOT NULL,
@@ -33,7 +49,8 @@ export function ensureSchema(): Promise<void> {
           updated_at TEXT NOT NULL DEFAULT (datetime('now'))
         )`
       );
-      await db.execute(
+      await runDDL(
+        db,
         `CREATE TABLE IF NOT EXISTS pagamenti (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
           persona TEXT NOT NULL,
@@ -45,7 +62,8 @@ export function ensureSchema(): Promise<void> {
           updated_at TEXT NOT NULL DEFAULT (datetime('now'))
         )`
       );
-      await db.execute(
+      await runDDL(
+        db,
         `CREATE TABLE IF NOT EXISTS login_attempts (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
           ip TEXT NOT NULL,
