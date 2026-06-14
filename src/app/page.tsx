@@ -215,19 +215,19 @@ export default function Dashboard() {
                   const status = expiryStatus(c.scadenza);
                   return (
                     <tr key={c.id}>
-                      <td>{c.nome}</td>
-                      <td>{c.username || <span className="muted">—</span>}</td>
-                      <td className="secret">
+                      <td data-label="Nome">{c.nome}</td>
+                      <td data-label="Username">{c.username || <span className="muted">—</span>}</td>
+                      <td data-label="Password" className="secret">
                         {revealed[c.id] !== undefined ? revealed[c.id] : <span className="muted">••••••</span>}{" "}
                         <button onClick={() => revealPassword(c.id)} style={{ padding: "2px 8px", fontSize: "0.78rem" }}>
                           {revealed[c.id] !== undefined ? "Nascondi" : "Mostra"}
                         </button>
                       </td>
-                      <td>
+                      <td data-label="Scadenza">
                         <span className={`badge ${status.kind}`}>{status.label}</span>
                       </td>
-                      <td>{c.credito_mesi} {c.credito_mesi === 1 ? "mese" : "mesi"}</td>
-                      <td>
+                      <td data-label="Credito">{c.credito_mesi} {c.credito_mesi === 1 ? "mese" : "mesi"}</td>
+                      <td className="cell-actions">
                         <div className="actions">
                           <button onClick={() => editCliente(c.id)}>Modifica</button>
                           <button className="danger" onClick={() => removeCliente(c.id)}>
@@ -273,16 +273,16 @@ export default function Dashboard() {
                   const status = expiryStatus(p.scadenza);
                   return (
                     <tr key={p.id} style={p.pagato ? { opacity: 0.55 } : undefined}>
-                      <td>{p.persona}</td>
-                      <td>{euro.format(Number(p.importo) || 0)}</td>
-                      <td>{p.pagato ? <span className="muted">—</span> : <span className={`badge ${status.kind}`}>{status.label}</span>}</td>
-                      <td>
+                      <td data-label="Persona">{p.persona}</td>
+                      <td data-label="Importo">{euro.format(Number(p.importo) || 0)}</td>
+                      <td data-label="Scadenza">{p.pagato ? <span className="muted">—</span> : <span className={`badge ${status.kind}`}>{status.label}</span>}</td>
+                      <td data-label="Stato">
                         <span className={`badge ${p.pagato ? "ok" : "expired"}`}>
                           {p.pagato ? "Pagato" : "Da pagare"}
                         </span>
                       </td>
-                      <td>{p.note || <span className="muted">—</span>}</td>
-                      <td>
+                      <td data-label="Note">{p.note || <span className="muted">—</span>}</td>
+                      <td className="cell-actions">
                         <div className="actions">
                           <button onClick={() => togglePagato(p)}>
                             {p.pagato ? "Segna da pagare" : "Segna pagato"}
