@@ -55,6 +55,7 @@ export default function Dashboard() {
   const [clienteForm, setClienteForm] = useState<{ open: boolean; initial?: ClienteDraft }>({ open: false });
   const [pagamentoForm, setPagamentoForm] = useState<{ open: boolean; initial?: PagamentoDraft }>({ open: false });
   const [importOpen, setImportOpen] = useState(false);
+  const [search, setSearch] = useState("");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -98,6 +99,17 @@ export default function Dashboard() {
       return a.nome.localeCompare(b.nome);
     });
   }, [clienti]);
+
+  // Filtro di ricerca per nome o username.
+  const clientiFiltrati = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return clientiSorted;
+    return clientiSorted.filter(
+      (c) =>
+        c.nome.toLowerCase().includes(q) ||
+        (c.username ?? "").toLowerCase().includes(q)
+    );
+  }, [clientiSorted, search]);
 
   // --- Clienti ---
   async function editCliente(id: number) {
@@ -223,7 +235,22 @@ export default function Dashboard() {
           ) : clienti.length === 0 ? (
             <p className="empty">Nessun cliente. Aggiungine uno con “+ Nuovo cliente”.</p>
           ) : (
-            <div className="table-scroll">
+            <>
+              <div className="search">
+                <span className="search-icon" aria-hidden>
+                  🔎
+                </span>
+                <input
+                  type="search"
+                  placeholder="Cerca per nome o username…"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                />
+              </div>
+              {clientiFiltrati.length === 0 ? (
+                <p className="empty">Nessun risultato per “{search}”.</p>
+              ) : (
+                <div className="table-scroll">
             <table className="table">
               <thead>
                 <tr>
@@ -236,7 +263,7 @@ export default function Dashboard() {
                 </tr>
               </thead>
               <tbody>
-                {clientiSorted.map((c) => {
+                {clientiFiltrati.map((c) => {
                   const status = expiryStatus(c.scadenza);
                   return (
                     <tr key={c.id} className={Number(c.credito_mesi) > 0 ? "has-credit" : undefined}>
@@ -266,6 +293,8 @@ export default function Dashboard() {
               </tbody>
             </table>
             </div>
+              )}
+            </>
           )}
         </div>
       )}
