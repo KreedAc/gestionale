@@ -23,7 +23,7 @@ type Pagamento = {
   note: string | null;
 };
 
-const WARN_DAYS = 30;
+const WARN_DAYS = 7;
 
 function expiryStatus(scadenza: string | null): { kind: string; label: string } {
   if (!scadenza) return { kind: "none", label: "—" };
