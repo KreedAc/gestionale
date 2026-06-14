@@ -1,7 +1,14 @@
-# Gestionale credenziali
+# Gestionale clienti
 
-Pagina web privata per gestire credenziali e relative scadenze, organizzate per persona.
-Accesso a utente singolo (solo tu) e segreti **cifrati a riposo** (AES-256-GCM).
+Pagina web privata per gestire clienti, le loro credenziali e scadenze, il credito di mesi
+ancora da erogare e i pagamenti da incassare.
+Accesso a utente singolo (solo tu) e password dei clienti **cifrate a riposo** (AES-256-GCM).
+
+**Cosa gestisce:**
+
+- **Clienti** — nome, username, password (cifrata), scadenza, credito in mesi ancora da erogare.
+- **Pagamenti** — lista delle persone che devono ancora pagare, con importo in € e scadenza.
+- **Riepilogo** — totale dei mesi di credito da erogare e totale € ancora da incassare.
 
 - **Stack:** Next.js (App Router) + TypeScript
 - **Database:** Turso (SQLite nel cloud)
@@ -72,12 +79,15 @@ src/
   app/
     api/login         POST  login
     api/logout        POST  logout
-    api/credentials   GET lista · POST crea
-    api/credentials/[id]  GET dettaglio · PUT modifica · DELETE elimina
+    api/clienti       GET lista · POST crea
+    api/clienti/[id]  GET dettaglio · PUT modifica · DELETE elimina
+    api/pagamenti     GET lista · POST crea
+    api/pagamenti/[id]  PUT modifica · DELETE elimina
     login/            pagina di accesso
-    page.tsx          dashboard (protetta)
+    page.tsx          dashboard (protetta): riepilogo + tab Clienti/Pagamenti
   components/
-    CredentialForm.tsx
+    ClienteForm.tsx
+    PagamentoForm.tsx
   lib/
     db.ts             client Turso + schema
     crypto.ts         cifratura AES-256-GCM

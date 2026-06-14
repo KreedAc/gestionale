@@ -16,24 +16,36 @@ export function getDb(): Client {
 
 let schemaReady: Promise<void> | null = null;
 
-// Crea la tabella se non esiste. Eseguito una sola volta per processo.
+// Crea le tabelle se non esistono. Eseguito una sola volta per processo.
 export function ensureSchema(): Promise<void> {
   if (!schemaReady) {
-    schemaReady = getDb()
-      .execute(
-        `CREATE TABLE IF NOT EXISTS credentials (
+    schemaReady = (async () => {
+      const db = getDb();
+      await db.execute(
+        `CREATE TABLE IF NOT EXISTS clienti (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
-          person_name TEXT NOT NULL,
-          service TEXT NOT NULL,
+          nome TEXT NOT NULL,
           username TEXT,
-          secret_encrypted TEXT,
-          notes TEXT,
-          expires_at TEXT,
+          password_cifrata TEXT,
+          scadenza TEXT,
+          credito_mesi INTEGER NOT NULL DEFAULT 0,
           created_at TEXT NOT NULL DEFAULT (datetime('now')),
           updated_at TEXT NOT NULL DEFAULT (datetime('now'))
         )`
-      )
-      .then(() => undefined);
+      );
+      await db.execute(
+        `CREATE TABLE IF NOT EXISTS pagamenti (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          persona TEXT NOT NULL,
+          importo REAL NOT NULL DEFAULT 0,
+          scadenza TEXT,
+          pagato INTEGER NOT NULL DEFAULT 0,
+          note TEXT,
+          created_at TEXT NOT NULL DEFAULT (datetime('now')),
+          updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+        )`
+      );
+    })();
   }
   return schemaReady;
 }

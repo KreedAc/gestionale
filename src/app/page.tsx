@@ -1,51 +1,67 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import CredentialForm, { type CredentialDraft } from "@/components/CredentialForm";
+import ClienteForm, { type ClienteDraft } from "@/components/ClienteForm";
+import PagamentoForm, { type PagamentoDraft } from "@/components/PagamentoForm";
 
-type Item = {
+type Cliente = {
   id: number;
-  person_name: string;
-  service: string;
+  nome: string;
   username: string | null;
-  notes: string | null;
-  expires_at: string | null;
+  scadenza: string | null;
+  credito_mesi: number;
+};
+
+type Pagamento = {
+  id: number;
+  persona: string;
+  importo: number;
+  scadenza: string | null;
+  pagato: number;
+  note: string | null;
 };
 
 const WARN_DAYS = 30;
 
-function expiryStatus(expires_at: string | null): { kind: string; label: string } {
-  if (!expires_at) return { kind: "none", label: "—" };
+function expiryStatus(scadenza: string | null): { kind: string; label: string } {
+  if (!scadenza) return { kind: "none", label: "—" };
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  const due = new Date(expires_at);
+  const due = new Date(scadenza);
   due.setHours(0, 0, 0, 0);
   const days = Math.round((due.getTime() - today.getTime()) / 86_400_000);
   const dateLabel = due.toLocaleDateString("it-IT");
   if (days < 0) return { kind: "expired", label: `Scaduto (${dateLabel})` };
-  if (days === 0) return { kind: "warn", label: `Scade oggi` };
+  if (days === 0) return { kind: "warn", label: "Scade oggi" };
   if (days <= WARN_DAYS) return { kind: "warn", label: `Tra ${days} gg (${dateLabel})` };
   return { kind: "ok", label: dateLabel };
 }
 
+const euro = new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR" });
+
 export default function Dashboard() {
   const router = useRouter();
-  const [items, setItems] = useState<Item[]>([]);
+  const [tab, setTab] = useState<"clienti" | "pagamenti">("clienti");
+  const [clienti, setClienti] = useState<Cliente[]>([]);
+  const [pagamenti, setPagamenti] = useState<Pagamento[]>([]);
   const [loading, setLoading] = useState(true);
-  const [formOpen, setFormOpen] = useState(false);
-  const [editing, setEditing] = useState<CredentialDraft | undefined>(undefined);
   const [revealed, setRevealed] = useState<Record<number, string>>({});
+
+  const [clienteForm, setClienteForm] = useState<{ open: boolean; initial?: ClienteDraft }>({ open: false });
+  const [pagamentoForm, setPagamentoForm] = useState<{ open: boolean; initial?: PagamentoDraft }>({ open: false });
 
   const load = useCallback(async () => {
     setLoading(true);
-    const res = await fetch("/api/credentials");
-    if (res.status === 401) {
+    const [rc, rp] = await Promise.all([fetch("/api/clienti"), fetch("/api/pagamenti")]);
+    if (rc.status === 401 || rp.status === 401) {
       router.replace("/login");
       return;
     }
-    const data = await res.json();
-    setItems(data.items ?? []);
+    const dc = await rc.json();
+    const dp = await rp.json();
+    setClienti(dc.items ?? []);
+    setPagamenti(dp.items ?? []);
     setLoading(false);
   }, [router]);
 
@@ -53,28 +69,34 @@ export default function Dashboard() {
     load();
   }, [load]);
 
-  async function openNew() {
-    setEditing(undefined);
-    setFormOpen(true);
-  }
+  const totaleMesi = useMemo(
+    () => clienti.reduce((acc, c) => acc + (Number(c.credito_mesi) || 0), 0),
+    [clienti]
+  );
+  const totaleDaIncassare = useMemo(
+    () => pagamenti.filter((p) => !p.pagato).reduce((acc, p) => acc + (Number(p.importo) || 0), 0),
+    [pagamenti]
+  );
 
-  async function openEdit(id: number) {
-    const res = await fetch(`/api/credentials/${id}`);
+  // --- Clienti ---
+  async function editCliente(id: number) {
+    const res = await fetch(`/api/clienti/${id}`);
     if (!res.ok) return;
     const { item } = await res.json();
-    setEditing({
-      id: item.id,
-      person_name: item.person_name ?? "",
-      service: item.service ?? "",
-      username: item.username ?? "",
-      secret: item.secret ?? "",
-      notes: item.notes ?? "",
-      expires_at: item.expires_at ?? "",
+    setClienteForm({
+      open: true,
+      initial: {
+        id: item.id,
+        nome: item.nome ?? "",
+        username: item.username ?? "",
+        password: item.password ?? "",
+        scadenza: item.scadenza ?? "",
+        credito_mesi: String(item.credito_mesi ?? 0),
+      },
     });
-    setFormOpen(true);
   }
 
-  async function reveal(id: number) {
+  async function revealPassword(id: number) {
     if (revealed[id] !== undefined) {
       setRevealed((r) => {
         const next = { ...r };
@@ -83,15 +105,51 @@ export default function Dashboard() {
       });
       return;
     }
-    const res = await fetch(`/api/credentials/${id}`);
+    const res = await fetch(`/api/clienti/${id}`);
     if (!res.ok) return;
     const { item } = await res.json();
-    setRevealed((r) => ({ ...r, [id]: item.secret || "(nessun segreto)" }));
+    setRevealed((r) => ({ ...r, [id]: item.password || "(nessuna password)" }));
   }
 
-  async function remove(id: number) {
-    if (!confirm("Eliminare questa credenziale?")) return;
-    const res = await fetch(`/api/credentials/${id}`, { method: "DELETE" });
+  async function removeCliente(id: number) {
+    if (!confirm("Eliminare questo cliente?")) return;
+    const res = await fetch(`/api/clienti/${id}`, { method: "DELETE" });
+    if (res.ok) load();
+  }
+
+  // --- Pagamenti ---
+  function editPagamento(p: Pagamento) {
+    setPagamentoForm({
+      open: true,
+      initial: {
+        id: p.id,
+        persona: p.persona,
+        importo: String(p.importo ?? ""),
+        scadenza: p.scadenza ?? "",
+        pagato: Boolean(p.pagato),
+        note: p.note ?? "",
+      },
+    });
+  }
+
+  async function togglePagato(p: Pagamento) {
+    const res = await fetch(`/api/pagamenti/${p.id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        persona: p.persona,
+        importo: p.importo,
+        scadenza: p.scadenza ?? "",
+        note: p.note ?? "",
+        pagato: !p.pagato,
+      }),
+    });
+    if (res.ok) load();
+  }
+
+  async function removePagamento(id: number) {
+    if (!confirm("Eliminare questo pagamento?")) return;
+    const res = await fetch(`/api/pagamenti/${id}`, { method: "DELETE" });
     if (res.ok) load();
   }
 
@@ -104,79 +162,164 @@ export default function Dashboard() {
   return (
     <div className="container">
       <div className="topbar">
-        <div>
-          <h1>Gestionale credenziali</h1>
-          <span className="muted">Area privata · {items.length} voci</span>
+        <h1>Gestionale clienti</h1>
+        <button onClick={logout}>Esci</button>
+      </div>
+
+      <div className="summary">
+        <div className="stat">
+          <span className="stat-label">Credito mesi da erogare</span>
+          <span className="stat-value">{totaleMesi}</span>
         </div>
-        <div className="actions">
-          <button className="primary" onClick={openNew}>
-            + Nuova
-          </button>
-          <button onClick={logout}>Esci</button>
+        <div className="stat">
+          <span className="stat-label">Ancora da incassare</span>
+          <span className="stat-value">{euro.format(totaleDaIncassare)}</span>
         </div>
       </div>
 
-      <div className="card">
-        {loading ? (
-          <p className="empty">Caricamento…</p>
-        ) : items.length === 0 ? (
-          <p className="empty">Nessuna credenziale. Aggiungine una con “+ Nuova”.</p>
-        ) : (
-          <table className="table">
-            <thead>
-              <tr>
-                <th>Persona</th>
-                <th>Servizio</th>
-                <th>Username</th>
-                <th>Segreto</th>
-                <th>Scadenza</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              {items.map((it) => {
-                const status = expiryStatus(it.expires_at);
-                return (
-                  <tr key={it.id}>
-                    <td>{it.person_name}</td>
-                    <td>{it.service}</td>
-                    <td>{it.username || <span className="muted">—</span>}</td>
-                    <td className="secret">
-                      {revealed[it.id] !== undefined ? (
-                        revealed[it.id]
-                      ) : (
-                        <span className="muted">••••••</span>
-                      )}{" "}
-                      <button onClick={() => reveal(it.id)} style={{ padding: "2px 8px", fontSize: "0.78rem" }}>
-                        {revealed[it.id] !== undefined ? "Nascondi" : "Mostra"}
-                      </button>
-                    </td>
-                    <td>
-                      <span className={`badge ${status.kind}`}>{status.label}</span>
-                    </td>
-                    <td>
-                      <div className="actions">
-                        <button onClick={() => openEdit(it.id)}>Modifica</button>
-                        <button className="danger" onClick={() => remove(it.id)}>
-                          Elimina
+      <div className="tabs">
+        <button className={tab === "clienti" ? "tab active" : "tab"} onClick={() => setTab("clienti")}>
+          Clienti ({clienti.length})
+        </button>
+        <button className={tab === "pagamenti" ? "tab active" : "tab"} onClick={() => setTab("pagamenti")}>
+          Pagamenti ({pagamenti.filter((p) => !p.pagato).length} da incassare)
+        </button>
+      </div>
+
+      {tab === "clienti" && (
+        <div className="card">
+          <div className="card-head">
+            <span className="muted">Anagrafica clienti e credenziali</span>
+            <button className="primary" onClick={() => setClienteForm({ open: true })}>
+              + Nuovo cliente
+            </button>
+          </div>
+          {loading ? (
+            <p className="empty">Caricamento…</p>
+          ) : clienti.length === 0 ? (
+            <p className="empty">Nessun cliente. Aggiungine uno con “+ Nuovo cliente”.</p>
+          ) : (
+            <table className="table">
+              <thead>
+                <tr>
+                  <th>Nome</th>
+                  <th>Username</th>
+                  <th>Password</th>
+                  <th>Scadenza</th>
+                  <th>Credito</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                {clienti.map((c) => {
+                  const status = expiryStatus(c.scadenza);
+                  return (
+                    <tr key={c.id}>
+                      <td>{c.nome}</td>
+                      <td>{c.username || <span className="muted">—</span>}</td>
+                      <td className="secret">
+                        {revealed[c.id] !== undefined ? revealed[c.id] : <span className="muted">••••••</span>}{" "}
+                        <button onClick={() => revealPassword(c.id)} style={{ padding: "2px 8px", fontSize: "0.78rem" }}>
+                          {revealed[c.id] !== undefined ? "Nascondi" : "Mostra"}
                         </button>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        )}
-      </div>
+                      </td>
+                      <td>
+                        <span className={`badge ${status.kind}`}>{status.label}</span>
+                      </td>
+                      <td>{c.credito_mesi} {c.credito_mesi === 1 ? "mese" : "mesi"}</td>
+                      <td>
+                        <div className="actions">
+                          <button onClick={() => editCliente(c.id)}>Modifica</button>
+                          <button className="danger" onClick={() => removeCliente(c.id)}>
+                            Elimina
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          )}
+        </div>
+      )}
 
-      {formOpen && (
-        <CredentialForm
-          initial={editing}
-          onClose={() => setFormOpen(false)}
+      {tab === "pagamenti" && (
+        <div className="card">
+          <div className="card-head">
+            <span className="muted">Persone che devono ancora pagare</span>
+            <button className="primary" onClick={() => setPagamentoForm({ open: true })}>
+              + Nuovo pagamento
+            </button>
+          </div>
+          {loading ? (
+            <p className="empty">Caricamento…</p>
+          ) : pagamenti.length === 0 ? (
+            <p className="empty">Nessun pagamento registrato.</p>
+          ) : (
+            <table className="table">
+              <thead>
+                <tr>
+                  <th>Persona</th>
+                  <th>Importo</th>
+                  <th>Scadenza</th>
+                  <th>Stato</th>
+                  <th>Note</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                {pagamenti.map((p) => {
+                  const status = expiryStatus(p.scadenza);
+                  return (
+                    <tr key={p.id} style={p.pagato ? { opacity: 0.55 } : undefined}>
+                      <td>{p.persona}</td>
+                      <td>{euro.format(Number(p.importo) || 0)}</td>
+                      <td>{p.pagato ? <span className="muted">—</span> : <span className={`badge ${status.kind}`}>{status.label}</span>}</td>
+                      <td>
+                        <span className={`badge ${p.pagato ? "ok" : "expired"}`}>
+                          {p.pagato ? "Pagato" : "Da pagare"}
+                        </span>
+                      </td>
+                      <td>{p.note || <span className="muted">—</span>}</td>
+                      <td>
+                        <div className="actions">
+                          <button onClick={() => togglePagato(p)}>
+                            {p.pagato ? "Segna da pagare" : "Segna pagato"}
+                          </button>
+                          <button onClick={() => editPagamento(p)}>Modifica</button>
+                          <button className="danger" onClick={() => removePagamento(p.id)}>
+                            Elimina
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          )}
+        </div>
+      )}
+
+      {clienteForm.open && (
+        <ClienteForm
+          initial={clienteForm.initial}
+          onClose={() => setClienteForm({ open: false })}
           onSaved={() => {
-            setFormOpen(false);
+            setClienteForm({ open: false });
             setRevealed({});
+            load();
+          }}
+        />
+      )}
+
+      {pagamentoForm.open && (
+        <PagamentoForm
+          initial={pagamentoForm.initial}
+          onClose={() => setPagamentoForm({ open: false })}
+          onSaved={() => {
+            setPagamentoForm({ open: false });
             load();
           }}
         />
