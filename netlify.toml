@@ -1,6 +1,12 @@
 [build]
   command = "npm run build"
 
+  # APP_USERNAME non e' un segreto (e' solo il nome utente di login, default "admin"):
+  # lo escludiamo dallo scanner dei segreti, altrimenti il valore generico "admin"
+  # presente nel codice fa fallire il build con un falso allarme.
+  [build.environment]
+    SECRETS_SCAN_OMIT_KEYS = "APP_USERNAME"
+
 # Il plugin ufficiale Next.js: gestisce build, API, middleware e funzioni server.
 [[plugins]]
   package = "@netlify/plugin-nextjs"
