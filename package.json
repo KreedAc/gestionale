@@ -11,7 +11,7 @@
     "test:turso": "node scripts/test-turso.mjs"
   },
   "dependencies": {
-    "@libsql/client": "^0.6.2",
+    "@libsql/client": "^0.17.3",
     "bcryptjs": "^2.4.3",
     "jose": "^5.4.1",
     "next": "^14.2.35",
@@ -20,10 +20,10 @@
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
-    "exceljs": "^4.4.0",
     "@types/node": "^20.14.0",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
+    "exceljs": "^4.4.0",
     "typescript": "^5.5.3"
   }
 }
