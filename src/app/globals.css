@@ -301,7 +301,22 @@ label {
   }
 }
 
-/* Su telefono: le tabelle diventano schede impilate e leggibili */
+/* La tabella resta orizzontale (come un foglio Excel) e su schermi stretti
+   si scorre lateralmente con uno swipe invece di deformarsi. */
+.table-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.table {
+  min-width: 720px;
+}
+
+.table td,
+.table th {
+  white-space: nowrap;
+}
+
 @media (max-width: 720px) {
   .summary {
     grid-template-columns: 1fr;
@@ -310,62 +325,5 @@ label {
   .card-head {
     flex-direction: column;
     align-items: stretch;
-  }
-
-  .table thead {
-    display: none;
-  }
-
-  .table,
-  .table tbody,
-  .table tr,
-  .table td {
-    display: block;
-    width: 100%;
-  }
-
-  .table tr {
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    background: var(--panel-2);
-    padding: 4px 14px;
-    margin-bottom: 12px;
-  }
-
-  .table td {
-    border: none;
-    padding: 9px 0;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 14px;
-  }
-
-  .table td + td {
-    border-top: 1px solid var(--border);
-  }
-
-  .table td::before {
-    content: attr(data-label);
-    color: var(--muted);
-    font-size: 0.74rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.03em;
-    flex-shrink: 0;
-  }
-
-  .table td.cell-actions {
-    border-top: 1px solid var(--border);
-    padding-top: 12px;
-  }
-
-  .table td.cell-actions::before {
-    content: none;
-  }
-
-  .table td.cell-actions .actions {
-    width: 100%;
-    justify-content: flex-end;
   }
 }

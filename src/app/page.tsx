@@ -199,6 +199,7 @@ export default function Dashboard() {
           ) : clienti.length === 0 ? (
             <p className="empty">Nessun cliente. Aggiungine uno con “+ Nuovo cliente”.</p>
           ) : (
+            <div className="table-scroll">
             <table className="table">
               <thead>
                 <tr>
@@ -240,6 +241,7 @@ export default function Dashboard() {
                 })}
               </tbody>
             </table>
+            </div>
           )}
         </div>
       )}
@@ -257,6 +259,7 @@ export default function Dashboard() {
           ) : pagamenti.length === 0 ? (
             <p className="empty">Nessun pagamento registrato.</p>
           ) : (
+            <div className="table-scroll">
             <table className="table">
               <thead>
                 <tr>
@@ -298,6 +301,7 @@ export default function Dashboard() {
                 })}
               </tbody>
             </table>
+            </div>
           )}
         </div>
       )}
