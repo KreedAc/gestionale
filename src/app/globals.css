@@ -317,6 +317,16 @@ label {
   white-space: nowrap;
 }
 
+/* Riga verde chiaro (stile Excel) per i clienti che hanno ancora credito */
+.table tr.has-credit td {
+  background: #c8efd4;
+  color: #0c2a16;
+}
+
+.table tr.has-credit td .muted {
+  color: #3c6b50;
+}
+
 @media (max-width: 720px) {
   .summary {
     grid-template-columns: 1fr;

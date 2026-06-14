@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import ClienteForm, { type ClienteDraft } from "@/components/ClienteForm";
 import PagamentoForm, { type PagamentoDraft } from "@/components/PagamentoForm";
+import ImportExcel from "@/components/ImportExcel";
 
 type Cliente = {
   id: number;
@@ -50,6 +51,7 @@ export default function Dashboard() {
 
   const [clienteForm, setClienteForm] = useState<{ open: boolean; initial?: ClienteDraft }>({ open: false });
   const [pagamentoForm, setPagamentoForm] = useState<{ open: boolean; initial?: PagamentoDraft }>({ open: false });
+  const [importOpen, setImportOpen] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -190,9 +192,12 @@ export default function Dashboard() {
         <div className="card">
           <div className="card-head">
             <span className="muted">Anagrafica clienti e credenziali</span>
-            <button className="primary" onClick={() => setClienteForm({ open: true })}>
-              + Nuovo cliente
-            </button>
+            <div className="actions">
+              <button onClick={() => setImportOpen(true)}>Importa Excel</button>
+              <button className="primary" onClick={() => setClienteForm({ open: true })}>
+                + Nuovo cliente
+              </button>
+            </div>
           </div>
           {loading ? (
             <p className="empty">Caricamento…</p>
@@ -204,10 +209,10 @@ export default function Dashboard() {
               <thead>
                 <tr>
                   <th>Nome</th>
-                  <th>Username</th>
-                  <th>Password</th>
                   <th>Scadenza</th>
                   <th>Credito</th>
+                  <th>Username</th>
+                  <th>Password</th>
                   <th></th>
                 </tr>
               </thead>
@@ -215,8 +220,12 @@ export default function Dashboard() {
                 {clienti.map((c) => {
                   const status = expiryStatus(c.scadenza);
                   return (
-                    <tr key={c.id}>
+                    <tr key={c.id} className={Number(c.credito_mesi) > 0 ? "has-credit" : undefined}>
                       <td data-label="Nome">{c.nome}</td>
+                      <td data-label="Scadenza">
+                        <span className={`badge ${status.kind}`}>{status.label}</span>
+                      </td>
+                      <td data-label="Credito">{c.credito_mesi} {c.credito_mesi === 1 ? "mese" : "mesi"}</td>
                       <td data-label="Username">{c.username || <span className="muted">—</span>}</td>
                       <td data-label="Password" className="secret">
                         {revealed[c.id] !== undefined ? revealed[c.id] : <span className="muted">••••••</span>}{" "}
@@ -224,10 +233,6 @@ export default function Dashboard() {
                           {revealed[c.id] !== undefined ? "Nascondi" : "Mostra"}
                         </button>
                       </td>
-                      <td data-label="Scadenza">
-                        <span className={`badge ${status.kind}`}>{status.label}</span>
-                      </td>
-                      <td data-label="Credito">{c.credito_mesi} {c.credito_mesi === 1 ? "mese" : "mesi"}</td>
                       <td className="cell-actions">
                         <div className="actions">
                           <button onClick={() => editCliente(c.id)}>Modifica</button>
@@ -324,6 +329,16 @@ export default function Dashboard() {
           onClose={() => setPagamentoForm({ open: false })}
           onSaved={() => {
             setPagamentoForm({ open: false });
+            load();
+          }}
+        />
+      )}
+
+      {importOpen && (
+        <ImportExcel
+          onClose={() => setImportOpen(false)}
+          onImported={() => {
+            setImportOpen(false);
             load();
           }}
         />
