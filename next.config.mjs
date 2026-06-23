@@ -1,6 +1,16 @@
+// Identificativo univoco del deploy: su Netlify e' il commit corrente, cosi'
+// cambia a ogni pubblicazione. Serve al client per accorgersi di un nuovo
+// deploy e ricaricarsi da solo.
+const buildId =
+  process.env.COMMIT_REF || process.env.BUILD_ID || `dev-${Date.now()}`;
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  env: {
+    NEXT_PUBLIC_BUILD_ID: buildId,
+  },
+  generateBuildId: () => buildId,
   async headers() {
     return [
       {

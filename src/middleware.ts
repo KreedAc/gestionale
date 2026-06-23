@@ -9,9 +9,11 @@ export async function middleware(req: NextRequest) {
 
   const isLoginPage = pathname === "/login";
   const isLoginApi = pathname === "/api/login";
+  const isVersionApi = pathname === "/api/version";
 
-  // Utente non autenticato: lascia passare solo login (pagina e API).
-  if (!session && !isLoginPage && !isLoginApi) {
+  // Utente non autenticato: lascia passare solo login (pagina e API) e il
+  // controllo versione (serve all'aggiornamento automatico).
+  if (!session && !isLoginPage && !isLoginApi && !isVersionApi) {
     if (pathname.startsWith("/api/")) {
       return NextResponse.json({ error: "Non autorizzato" }, { status: 401 });
     }
