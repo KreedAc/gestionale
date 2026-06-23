@@ -24,6 +24,7 @@ type Pagamento = {
 };
 
 const WARN_DAYS = 7;
+const VALORE_MESE = 5; // euro per ogni mese di credito da erogare
 
 function expiryStatus(scadenza: string | null): { kind: string; label: string } {
   if (!scadenza) return { kind: "none", label: "—" };
@@ -202,7 +203,9 @@ export default function Dashboard() {
       <div className="summary">
         <div className="stat">
           <span className="stat-label">Credito mesi da erogare</span>
-          <span className="stat-value">{totaleMesi}</span>
+          <span className="stat-value">
+            {totaleMesi} / {euro.format(totaleMesi * VALORE_MESE)}
+          </span>
         </div>
         <div className="stat">
           <span className="stat-label">Ancora da incassare</span>
