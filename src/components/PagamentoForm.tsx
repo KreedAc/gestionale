@@ -83,27 +83,9 @@ export default function PagamentoForm({
           </div>
         </div>
         <div className="field">
-          <label htmlFor="scadenza">Scadenza pagamento</label>
-          <input
-            id="scadenza"
-            type="date"
-            value={draft.scadenza}
-            onChange={(e) => set("scadenza", e.target.value)}
-          />
-        </div>
-        <div className="field">
           <label htmlFor="note">Note</label>
           <textarea id="note" rows={2} value={draft.note} onChange={(e) => set("note", e.target.value)} />
         </div>
-        <label style={{ display: "flex", alignItems: "center", gap: 8, color: "var(--text)" }}>
-          <input
-            type="checkbox"
-            checked={draft.pagato}
-            onChange={(e) => set("pagato", e.target.checked)}
-            style={{ width: "auto" }}
-          />
-          Già pagato
-        </label>
         {error && <p className="error">{error}</p>}
         <div className="modal-actions">
           <button type="button" onClick={onClose}>

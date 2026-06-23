@@ -81,7 +81,7 @@ export default function Dashboard() {
     [clienti]
   );
   const totaleDaIncassare = useMemo(
-    () => pagamenti.filter((p) => !p.pagato).reduce((acc, p) => acc + (Number(p.importo) || 0), 0),
+    () => pagamenti.reduce((acc, p) => acc + (Number(p.importo) || 0), 0),
     [pagamenti]
   );
 
@@ -166,21 +166,6 @@ export default function Dashboard() {
     });
   }
 
-  async function togglePagato(p: Pagamento) {
-    const res = await fetch(`/api/pagamenti/${p.id}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        persona: p.persona,
-        importo: p.importo,
-        scadenza: p.scadenza ?? "",
-        note: p.note ?? "",
-        pagato: !p.pagato,
-      }),
-    });
-    if (res.ok) load();
-  }
-
   async function removePagamento(id: number) {
     if (!confirm("Eliminare questo pagamento?")) return;
     const res = await fetch(`/api/pagamenti/${id}`, { method: "DELETE" });
@@ -218,7 +203,7 @@ export default function Dashboard() {
           Clienti ({clienti.length})
         </button>
         <button className={tab === "pagamenti" ? "tab active" : "tab"} onClick={() => setTab("pagamenti")}>
-          Pagamenti ({pagamenti.filter((p) => !p.pagato).length} da incassare)
+          Pagamenti ({pagamenti.length} da incassare)
         </button>
       </div>
 
@@ -321,31 +306,18 @@ export default function Dashboard() {
                 <tr>
                   <th>Persona</th>
                   <th>Importo</th>
-                  <th>Scadenza</th>
-                  <th>Stato</th>
                   <th>Note</th>
                   <th></th>
                 </tr>
               </thead>
               <tbody>
-                {pagamenti.map((p) => {
-                  const status = expiryStatus(p.scadenza);
-                  return (
-                    <tr key={p.id} style={p.pagato ? { opacity: 0.55 } : undefined}>
+                {pagamenti.map((p) => (
+                    <tr key={p.id}>
                       <td data-label="Persona">{p.persona}</td>
                       <td data-label="Importo">{euro.format(Number(p.importo) || 0)}</td>
-                      <td data-label="Scadenza">{p.pagato ? <span className="muted">—</span> : <span className={`badge ${status.kind}`}>{status.label}</span>}</td>
-                      <td data-label="Stato">
-                        <span className={`badge ${p.pagato ? "ok" : "expired"}`}>
-                          {p.pagato ? "Pagato" : "Da pagare"}
-                        </span>
-                      </td>
                       <td data-label="Note">{p.note || <span className="muted">—</span>}</td>
                       <td className="cell-actions">
                         <div className="actions">
-                          <button onClick={() => togglePagato(p)}>
-                            {p.pagato ? "Segna da pagare" : "Segna pagato"}
-                          </button>
                           <button onClick={() => editPagamento(p)}>Modifica</button>
                           <button className="danger" onClick={() => removePagamento(p.id)}>
                             Elimina
@@ -353,8 +325,7 @@ export default function Dashboard() {
                         </div>
                       </td>
                     </tr>
-                  );
-                })}
+                ))}
               </tbody>
             </table>
             </div>

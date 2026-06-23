@@ -11,7 +11,7 @@ export async function GET() {
     const result = await getDb().execute(
       `SELECT id, persona, importo, scadenza, pagato, note
        FROM pagamenti
-       ORDER BY pagato ASC, (scadenza IS NULL), scadenza ASC, persona ASC`
+       ORDER BY persona ASC`
     );
     return NextResponse.json({ items: result.rows });
   } catch (e) {
