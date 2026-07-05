@@ -147,6 +147,16 @@ label {
   color: var(--accent);
 }
 
+/* Contatori piccoli sotto il valore principale */
+.stat-sub {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: 6px;
+  font-size: 0.76rem;
+  color: var(--muted);
+}
+
 /* Tab */
 .tabs {
   display: flex;

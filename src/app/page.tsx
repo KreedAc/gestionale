@@ -80,6 +80,24 @@ export default function Dashboard() {
     () => clienti.reduce((acc, c) => acc + (Number(c.credito_mesi) || 0), 0),
     [clienti]
   );
+
+  // Quante persone hanno credito (mesi > 0).
+  const personeConCredito = useMemo(
+    () => clienti.filter((c) => Number(c.credito_mesi) > 0).length,
+    [clienti]
+  );
+
+  // Quante persone hanno credito e scadenza nel mese corrente.
+  const personeCreditoMese = useMemo(() => {
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = now.getMonth();
+    return clienti.filter((c) => {
+      if (Number(c.credito_mesi) <= 0 || !c.scadenza) return false;
+      const d = new Date(c.scadenza);
+      return d.getFullYear() === y && d.getMonth() === m;
+    }).length;
+  }, [clienti]);
   const totaleDaIncassare = useMemo(
     () => pagamenti.reduce((acc, p) => acc + (Number(p.importo) || 0), 0),
     [pagamenti]
@@ -191,6 +209,10 @@ export default function Dashboard() {
           <span className="stat-value">
             {totaleMesi} / {euro.format(totaleMesi * VALORE_MESE)}
           </span>
+          <div className="stat-sub">
+            <span>{personeConCredito} persone con credito</span>
+            <span>{personeCreditoMese} da erogare questo mese</span>
+          </div>
         </div>
         <div className="stat">
           <span className="stat-label">Ancora da incassare</span>
