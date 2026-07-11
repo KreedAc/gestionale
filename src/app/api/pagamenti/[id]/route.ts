@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
-import { ensureSchema, getDb } from "@/lib/db";
+import { ensurePagamentiColumns, getDb } from "@/lib/db";
 import { apiError } from "@/lib/api";
 
 export const runtime = "nodejs";
 
 type Params = { params: { id: string } };
 
-// Aggiorna un pagamento (anche solo per cambiare lo stato pagato).
+// Aggiorna un pagamento.
 export async function PUT(req: Request, { params }: Params) {
   try {
     const body = await req.json().catch(() => null);
@@ -17,11 +17,11 @@ export async function PUT(req: Request, { params }: Params) {
 
     const importo = Number.parseFloat(String(body.importo ?? "0").replace(",", "."));
 
-    await ensureSchema();
+    await ensurePagamentiColumns();
     const result = await getDb().execute({
       sql: `UPDATE pagamenti
             SET persona = ?, importo = ?, scadenza = ?, pagato = ?, note = ?,
-                updated_at = datetime('now')
+                lamezia = ?, rende = ?, bonifico = ?, updated_at = datetime('now')
             WHERE id = ?`,
       args: [
         persona,
@@ -29,6 +29,9 @@ export async function PUT(req: Request, { params }: Params) {
         String(body.scadenza ?? "").trim() || null,
         body.pagato ? 1 : 0,
         String(body.note ?? "").trim() || null,
+        body.lamezia ? 1 : 0,
+        body.rende ? 1 : 0,
+        body.bonifico ? 1 : 0,
         params.id,
       ],
     });
@@ -45,7 +48,6 @@ export async function PUT(req: Request, { params }: Params) {
 // Elimina un pagamento.
 export async function DELETE(_req: Request, { params }: Params) {
   try {
-    await ensureSchema();
     const result = await getDb().execute({
       sql: `DELETE FROM pagamenti WHERE id = ?`,
       args: [params.id],

@@ -9,6 +9,9 @@ export type PagamentoDraft = {
   scadenza: string;
   pagato: boolean;
   note: string;
+  lamezia: boolean;
+  rende: boolean;
+  bonifico: boolean;
 };
 
 const empty: PagamentoDraft = {
@@ -17,6 +20,9 @@ const empty: PagamentoDraft = {
   scadenza: "",
   pagato: false,
   note: "",
+  lamezia: false,
+  rende: false,
+  bonifico: false,
 };
 
 export default function PagamentoForm({
@@ -85,6 +91,23 @@ export default function PagamentoForm({
         <div className="field">
           <label htmlFor="note">Note</label>
           <textarea id="note" rows={2} value={draft.note} onChange={(e) => set("note", e.target.value)} />
+        </div>
+        <div className="field">
+          <label>Sezione</label>
+          <div className="check-row">
+            <label className="check">
+              <input type="checkbox" checked={draft.lamezia} onChange={(e) => set("lamezia", e.target.checked)} />
+              Lamezia
+            </label>
+            <label className="check">
+              <input type="checkbox" checked={draft.rende} onChange={(e) => set("rende", e.target.checked)} />
+              Rende
+            </label>
+            <label className="check">
+              <input type="checkbox" checked={draft.bonifico} onChange={(e) => set("bonifico", e.target.checked)} />
+              Bonifico
+            </label>
+          </div>
         </div>
         {error && <p className="error">{error}</p>}
         <div className="modal-actions">

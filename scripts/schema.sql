@@ -20,6 +20,9 @@ CREATE TABLE IF NOT EXISTS pagamenti (
   scadenza TEXT,
   pagato INTEGER NOT NULL DEFAULT 0,
   note TEXT,
+  lamezia INTEGER NOT NULL DEFAULT 0,
+  rende INTEGER NOT NULL DEFAULT 0,
+  bonifico INTEGER NOT NULL DEFAULT 0,
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );

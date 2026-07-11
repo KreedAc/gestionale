@@ -105,6 +105,45 @@ label {
   margin-bottom: 14px;
 }
 
+.check-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.check {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  color: var(--text);
+  font-size: 0.92rem;
+  cursor: pointer;
+}
+
+.check input {
+  width: auto;
+}
+
+/* Intestazione di una sezione nella lista pagamenti */
+.sezione {
+  margin-bottom: 20px;
+}
+
+.sezione-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border);
+}
+
+.sezione-head strong {
+  font-size: 1rem;
+}
+
 .row {
   display: grid;
   grid-template-columns: 1fr 1fr;

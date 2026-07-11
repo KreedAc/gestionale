@@ -21,10 +21,19 @@ type Pagamento = {
   scadenza: string | null;
   pagato: number;
   note: string | null;
+  lamezia: number;
+  rende: number;
+  bonifico: number;
 };
 
 const WARN_DAYS = 7;
 const VALORE_MESE = 5; // euro per ogni mese di credito da erogare
+
+const SEZIONI: { key: "lamezia" | "rende" | "bonifico"; label: string }[] = [
+  { key: "lamezia", label: "Lamezia" },
+  { key: "rende", label: "Rende" },
+  { key: "bonifico", label: "Bonifico" },
+];
 
 function expiryStatus(scadenza: string | null): { kind: string; label: string } {
   if (!scadenza) return { kind: "none", label: "—" };
@@ -180,6 +189,9 @@ export default function Dashboard() {
         scadenza: p.scadenza ?? "",
         pagato: Boolean(p.pagato),
         note: p.note ?? "",
+        lamezia: Boolean(p.lamezia),
+        rende: Boolean(p.rende),
+        bonifico: Boolean(p.bonifico),
       },
     });
   }
@@ -195,6 +207,43 @@ export default function Dashboard() {
     router.replace("/login");
     router.refresh();
   }
+
+  // Tabella pagamenti riutilizzabile (per ogni sezione).
+  function pagamentiTable(list: Pagamento[]) {
+    return (
+      <div className="table-scroll">
+        <table className="table">
+          <thead>
+            <tr>
+              <th>Persona</th>
+              <th>Importo</th>
+              <th>Note</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {list.map((p) => (
+              <tr key={p.id}>
+                <td data-label="Persona">{p.persona}</td>
+                <td data-label="Importo">{euro.format(Number(p.importo) || 0)}</td>
+                <td data-label="Note">{p.note || <span className="muted">—</span>}</td>
+                <td className="cell-actions">
+                  <div className="actions">
+                    <button onClick={() => editPagamento(p)}>Modifica</button>
+                    <button className="danger" onClick={() => removePagamento(p.id)}>
+                      Elimina
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    );
+  }
+
+  const pagamentiSenzaSezione = pagamenti.filter((p) => !p.lamezia && !p.rende && !p.bonifico);
 
   return (
     <div className="container">
@@ -322,35 +371,38 @@ export default function Dashboard() {
           ) : pagamenti.length === 0 ? (
             <p className="empty">Nessun pagamento registrato.</p>
           ) : (
-            <div className="table-scroll">
-            <table className="table">
-              <thead>
-                <tr>
-                  <th>Persona</th>
-                  <th>Importo</th>
-                  <th>Note</th>
-                  <th></th>
-                </tr>
-              </thead>
-              <tbody>
-                {pagamenti.map((p) => (
-                    <tr key={p.id}>
-                      <td data-label="Persona">{p.persona}</td>
-                      <td data-label="Importo">{euro.format(Number(p.importo) || 0)}</td>
-                      <td data-label="Note">{p.note || <span className="muted">—</span>}</td>
-                      <td className="cell-actions">
-                        <div className="actions">
-                          <button onClick={() => editPagamento(p)}>Modifica</button>
-                          <button className="danger" onClick={() => removePagamento(p.id)}>
-                            Elimina
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                ))}
-              </tbody>
-            </table>
-            </div>
+            <>
+              {SEZIONI.map((sez) => {
+                const list = pagamenti.filter((p) => Number(p[sez.key]) > 0);
+                if (list.length === 0) return null;
+                const subtot = list.reduce((a, p) => a + (Number(p.importo) || 0), 0);
+                return (
+                  <div className="sezione" key={sez.key}>
+                    <div className="sezione-head">
+                      <strong>{sez.label}</strong>
+                      <span className="muted">
+                        {list.length} · {euro.format(subtot)}
+                      </span>
+                    </div>
+                    {pagamentiTable(list)}
+                  </div>
+                );
+              })}
+              {pagamentiSenzaSezione.length > 0 && (
+                <div className="sezione">
+                  <div className="sezione-head">
+                    <strong>Senza sezione</strong>
+                    <span className="muted">
+                      {pagamentiSenzaSezione.length} ·{" "}
+                      {euro.format(
+                        pagamentiSenzaSezione.reduce((a, p) => a + (Number(p.importo) || 0), 0)
+                      )}
+                    </span>
+                  </div>
+                  {pagamentiTable(pagamentiSenzaSezione)}
+                </div>
+              )}
+            </>
           )}
         </div>
       )}

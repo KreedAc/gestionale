@@ -24,3 +24,31 @@ export function getDb(): Client {
 export async function ensureSchema(): Promise<void> {
   // no-op: lo schema è gestito esternamente.
 }
+
+let pagamentiColsReady: Promise<void> | null = null;
+
+// Aggiunge (una volta) le colonne sezione alla tabella pagamenti se mancano.
+// Tollera sia "duplicate column" (gia' presenti) sia l'eventuale falso errore
+// "migration jobs" di Turso: la colonna viene comunque creata sul database.
+export function ensurePagamentiColumns(): Promise<void> {
+  if (!pagamentiColsReady) {
+    pagamentiColsReady = (async () => {
+      const db = getDb();
+      const alters = [
+        "ALTER TABLE pagamenti ADD COLUMN lamezia INTEGER NOT NULL DEFAULT 0",
+        "ALTER TABLE pagamenti ADD COLUMN rende INTEGER NOT NULL DEFAULT 0",
+        "ALTER TABLE pagamenti ADD COLUMN bonifico INTEGER NOT NULL DEFAULT 0",
+      ];
+      for (const sql of alters) {
+        try {
+          await db.execute(sql);
+        } catch (e) {
+          const msg = e instanceof Error ? e.message : "";
+          if (msg.includes("duplicate column") || msg.includes("migration jobs")) continue;
+          throw e;
+        }
+      }
+    })();
+  }
+  return pagamentiColsReady;
+}

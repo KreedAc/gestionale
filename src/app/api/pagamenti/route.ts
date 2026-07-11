@@ -1,15 +1,15 @@
 import { NextResponse } from "next/server";
-import { ensureSchema, getDb } from "@/lib/db";
+import { ensurePagamentiColumns, getDb } from "@/lib/db";
 import { apiError } from "@/lib/api";
 
 export const runtime = "nodejs";
 
-// Elenco pagamenti (prima quelli da pagare).
+// Elenco pagamenti (ordine alfabetico per persona).
 export async function GET() {
   try {
-    await ensureSchema();
+    await ensurePagamentiColumns();
     const result = await getDb().execute(
-      `SELECT id, persona, importo, scadenza, pagato, note
+      `SELECT id, persona, importo, scadenza, pagato, note, lamezia, rende, bonifico
        FROM pagamenti
        ORDER BY persona ASC`
     );
@@ -30,16 +30,19 @@ export async function POST(req: Request) {
 
     const importo = Number.parseFloat(String(body.importo ?? "0").replace(",", "."));
 
-    await ensureSchema();
+    await ensurePagamentiColumns();
     await getDb().execute({
-      sql: `INSERT INTO pagamenti (persona, importo, scadenza, pagato, note)
-            VALUES (?, ?, ?, ?, ?)`,
+      sql: `INSERT INTO pagamenti (persona, importo, scadenza, pagato, note, lamezia, rende, bonifico)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
       args: [
         persona,
         Number.isFinite(importo) ? importo : 0,
         String(body.scadenza ?? "").trim() || null,
         body.pagato ? 1 : 0,
         String(body.note ?? "").trim() || null,
+        body.lamezia ? 1 : 0,
+        body.rende ? 1 : 0,
+        body.bonifico ? 1 : 0,
       ],
     });
 
