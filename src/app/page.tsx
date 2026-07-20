@@ -66,6 +66,7 @@ export default function Dashboard() {
   const [pagamentoForm, setPagamentoForm] = useState<{ open: boolean; initial?: PagamentoDraft }>({ open: false });
   const [importOpen, setImportOpen] = useState(false);
   const [search, setSearch] = useState("");
+  const [creditoFiltro, setCreditoFiltro] = useState<"tutti" | "con" | "senza">("tutti");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -128,16 +129,23 @@ export default function Dashboard() {
     });
   }, [clienti]);
 
-  // Filtro di ricerca per nome o username.
+  // Filtro per ricerca (nome/username) e per credito.
   const clientiFiltrati = useMemo(() => {
     const q = search.trim().toLowerCase();
-    if (!q) return clientiSorted;
-    return clientiSorted.filter(
-      (c) =>
-        c.nome.toLowerCase().includes(q) ||
-        (c.username ?? "").toLowerCase().includes(q)
-    );
-  }, [clientiSorted, search]);
+    return clientiSorted.filter((c) => {
+      const conCredito = Number(c.credito_mesi) > 0;
+      if (creditoFiltro === "con" && !conCredito) return false;
+      if (creditoFiltro === "senza" && conCredito) return false;
+      if (
+        q &&
+        !c.nome.toLowerCase().includes(q) &&
+        !(c.username ?? "").toLowerCase().includes(q)
+      ) {
+        return false;
+      }
+      return true;
+    });
+  }, [clientiSorted, search, creditoFiltro]);
 
   // --- Clienti ---
   async function editCliente(id: number) {
@@ -305,6 +313,27 @@ export default function Dashboard() {
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                 />
+              </div>
+              <div className="filtri">
+                <span className="filtri-label">Credito:</span>
+                <button
+                  className={creditoFiltro === "tutti" ? "chip active" : "chip"}
+                  onClick={() => setCreditoFiltro("tutti")}
+                >
+                  Tutti
+                </button>
+                <button
+                  className={creditoFiltro === "con" ? "chip active" : "chip"}
+                  onClick={() => setCreditoFiltro("con")}
+                >
+                  Con credito
+                </button>
+                <button
+                  className={creditoFiltro === "senza" ? "chip active" : "chip"}
+                  onClick={() => setCreditoFiltro("senza")}
+                >
+                  Senza credito
+                </button>
               </div>
               {clientiFiltrati.length === 0 ? (
                 <p className="empty">Nessun risultato per “{search}”.</p>

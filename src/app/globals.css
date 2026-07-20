@@ -360,6 +360,34 @@ label {
   padding-left: 38px;
 }
 
+/* Filtri a pillola (es. filtro credito) */
+.filtri {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+
+.filtri-label {
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.chip {
+  padding: 5px 12px;
+  font-size: 0.82rem;
+  border-radius: 999px;
+  background: transparent;
+}
+
+.chip.active {
+  background: var(--panel-2);
+  border-color: var(--accent);
+  color: var(--accent);
+  font-weight: 600;
+}
+
 /* Login */
 .login-wrap {
   min-height: 100vh;
